@@ -29,7 +29,7 @@ class Product:
         if self.check_quantity(quantity):
             self.quantity -= quantity
         else:
-            raise ValueError("Не хватает продуктов")
+            raise ValueError(f"Не хватает продукта {self.name}.")
 
     def __hash__(self):
         return hash(self.name + self.description)
@@ -53,10 +53,13 @@ class Cart:
         Метод добавления продукта в корзину.
         Если продукт уже есть в корзине, то увеличиваем количество
         """
-        if product in self.products:
-            self.products[product] += buy_count
+        if product.check_quantity(buy_count):
+            if product in self.products:
+                self.products[product] += buy_count
+            else:
+                self.products[product] = buy_count
         else:
-            self.products[product] = buy_count
+            raise ValueError(f"Вы пытаетесь добавить в корзину {product.name}, но его нет в таком количестве")
 
     def remove_product(self, product: Product, remove_count=None):
         """
@@ -65,15 +68,14 @@ class Cart:
         Если remove_count больше, чем количество продуктов в позиции, то удаляется вся позиция
         """
         if product not in self.products:
-            raise ValueError("Продукта нет в корзине.")
-        elif remove_count is None or remove_count > self.products[product]:
+            raise ValueError(f"Продукта {product.name} нет в корзине.")
+        elif remove_count is None or remove_count >= self.products[product]:
             del self.products[product]
         else:
             self.products[product] -= remove_count
 
     def clear(self):
         self.products.clear()
-        return self.products
 
     def get_total_price(self) -> float:
         total_price = 0
@@ -89,7 +91,9 @@ class Cart:
         """
         for product, quantity in self.products.items():
             if not product.check_quantity(quantity):
-                raise ValueError("Товара не хватает на складе")
-            else:
-                product.buy(quantity)
-        self.products.clear()
+                raise ValueError(f"Товара {product.name} не хватает на складе")
+
+        for product, quantity in self.products.items():
+            product.buy(quantity)
+
+        self.clear()
